@@ -16,67 +16,35 @@ document.getElementById('mood-form').addEventListener('submit', function(event) 
     
     moodData.push(data);
     localStorage.setItem('moodData', JSON.stringify(moodData));
-    
-    displayChart();
+
+    // Show feedback message
+    document.getElementById('feedback').textContent = 'Entry added successfully!';
+    setTimeout(() => document.getElementById('feedback').textContent = '', 3000);
+
+    displayEntries();
 });
 
-function displayChart() {
+function displayEntries() {
     let moodData = localStorage.getItem('moodData');
     moodData = moodData ? JSON.parse(moodData) : [];
-    
-    const labels = moodData.map(entry => entry.date);
-    const moodValues = moodData.map(entry => entry.mood);
-    const waterValues = moodData.map(entry => entry.water);
-    const sleepValues = moodData.map(entry => entry.sleep);
-    const painValues = moodData.map(entry => entry.pain);
-    const stressValues = moodData.map(entry => entry.stress);
-    const outsideValues = moodData.map(entry => entry.outside);
 
-    const ctx = document.getElementById('mood-chart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Mood',
-                    data: moodValues,
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                },
-                {
-                    label: 'Water Intake',
-                    data: waterValues,
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                },
-                {
-                    label: 'Sleep',
-                    data: sleepValues,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                },
-                {
-                    label: 'Pain Levels',
-                    data: painValues,
-                    borderColor: 'rgba(153, 102, 255, 1)',
-                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                },
-                {
-                    label: 'Stress Levels',
-                    data: stressValues,
-                    borderColor: 'rgba(255, 159, 64, 1)',
-                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                },
-                {
-                    label: 'Time Spent Outside',
-                    data: outsideValues,
-                    borderColor: 'rgba(255, 206, 86, 1)',
-                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                },
-            ]
-        }
+    const entriesList = document.getElementById('entries-list');
+    entriesList.innerHTML = '';
+    moodData.forEach((entry, index) => {
+        const listItem = document.createElement('li');
+        listItem.textContent = `${entry.date}: Mood ${entry.mood}, Water ${entry.water} litres, Sleep ${entry.sleep} hours, Pain ${entry.pain}, Stress ${entry.stress}, Outside ${entry.outside} hours`;
+        const removeButton = document.createElement('button');
+        removeButton.textContent = 'Remove';
+        removeButton.onclick = () => {
+            if (confirm('Are you sure you want to remove this entry?')) {
+                moodData.splice(index, 1);
+                localStorage.setItem('moodData', JSON.stringify(moodData));
+                displayEntries();
+            }
+        };
+        listItem.appendChild(removeButton);
+        entriesList.appendChild(listItem);
     });
 }
 
-document.addEventListener('DOMContentLoaded', displayChart);
+document.addEventListener('DOMContentLoaded', displayEntries);
