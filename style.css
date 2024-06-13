@@ -116,3 +116,28 @@ canvas {
     border-radius: 5px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
+
+/* Style for insights container */
+.insights-container h2 {
+    color: #333;
+    margin-bottom: 10px;
+    margin-top: 54px;
+    font-size: 1.5em;
+}
+
+/* Style for insights list */
+.insights-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Style for individual insight items */
+.insights-list li {
+    background-color: #f0f4f8;
+    padding: 20px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
