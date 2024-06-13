@@ -101,11 +101,15 @@ function generateInsights() {
     const waterValues = moodData.map(entry => entry.water);
     const stressValues = moodData.map(entry => entry.stress);
     const moodValues = moodData.map(entry => entry.mood);
+    const painValues = moodData.map(entry => entry.pain);
+    const outsideValues = moodData.map(entry => entry.outside);
 
     // Calculate correlations
     const correlationSleep = calculateCorrelation(moodValues, sleepValues);
     const correlationWater = calculateCorrelation(moodValues, waterValues);
     const correlationStress = calculateCorrelation(moodValues, stressValues);
+    const correlationPainStress = calculateCorrelation(painValues, stressValues);
+    const correlationOutside = calculateCorrelation(moodValues, outsideValues);
 
     // Prepare insights based on correlations
     const insights = [];
@@ -126,6 +130,38 @@ function generateInsights() {
         insights.push(`Reducing stress levels may lead to higher mood scores.`);
     } else if (correlationStress < -0.5) {
         insights.push(`High stress levels appear to correlate with lower mood.`);
+    }
+
+    if (correlationPainStress > 0.5) {
+        insights.push(`Higher pain levels tend to correlate with higher stress levels.`);
+    } else if (correlationPainStress < -0.5) {
+        insights.push(`Lower pain levels tend to correlate with lower stress levels.`);
+    }
+
+    if (correlationOutside > 0.5) {
+        insights.push(`Spending more time outside seems to positively influence mood.`);
+    } else if (correlationOutside < -0.5) {
+        insights.push(`Less time spent outside might negatively impact mood.`);
+    }
+
+    // Additional insights based on ideal sleep duration
+    const idealSleepDuration = 8; // Ideal sleep duration in hours
+    const averageSleepDuration = sleepValues.reduce((acc, value) => acc + value, 0) / sleepValues.length;
+
+    if (averageSleepDuration >= idealSleepDuration) {
+        insights.push(`Your average sleep duration meets or exceeds the recommended 8 hours per day.`);
+    } else if (averageSleepDuration < idealSleepDuration) {
+        insights.push(`Your average sleep duration is below the recommended 8 hours per day, which may affect mood.`);
+    }
+
+    // Additional insights based on ideal water intake
+    const idealWaterIntake = 2; // Ideal water intake in liters
+    const averageWaterIntake = waterValues.reduce((acc, value) => acc + value, 0) / waterValues.length;
+
+    if (averageWaterIntake >= idealWaterIntake) {
+        insights.push(`Your average water intake meets or exceeds the recommended 2 liters per day.`);
+    } else {
+        insights.push(`Your average water intake is below the recommended 2 liters per day, which may affect mood.`);
     }
 
     return insights;
