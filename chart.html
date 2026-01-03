@@ -13,19 +13,14 @@
         <h1>Mood Chart</h1>
         <nav>
             <a href="index.html" class="nav-link">Back to Form</a>
+            <button id="prevWeek">Previous Week</button>
+            <button id="nextWeek">Next Week</button>
         </nav>
     </header>
     
     <main>
         <canvas id="mood-chart"></canvas>
-
-        <!-- Insights section -->
-        <div id="insightsContainer" class="insights-container">
-            <h2>Insights</h2>
-            <ul id="insightsList" class="insights-list">
-                <!-- Insights will be dynamically added here -->
-            </ul>
-        </div>
+        <ul id="insightsList" class="insights-list"></ul>
     </main>
 
     <script src="chart.js"></script>

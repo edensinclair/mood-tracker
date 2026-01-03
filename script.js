@@ -1,50 +1,129 @@
-document.getElementById('mood-form').addEventListener('submit', function(event) {
-    event.preventDefault();
-    
-    const date = document.getElementById('date').value;
-    const mood = document.getElementById('mood').value;
-    const water = document.getElementById('water').value;
-    const sleep = document.getElementById('sleep').value;
-    const pain = document.getElementById('pain').value;
-    const stress = document.getElementById('stress').value;
-    const outside = document.getElementById('outside').value;
+// Example moodData (replace with your actual data)
+let moodData = [
+    { date: '2024-06-01', mood: 7, sleep: 8, water: 5, stress: 3 },
+    { date: '2024-06-02', mood: 6, sleep: 7, water: 4, stress: 5 },
+    { date: '2024-06-03', mood: 8, sleep: 9, water: 6, stress: 2 },
+    { date: '2024-06-04', mood: 5, sleep: 6, water: 3, stress: 7 },
+    { date: '2024-06-05', mood: 7, sleep: 8, water: 5, stress: 4 },
+    { date: '2024-06-06', mood: 6, sleep: 7, water: 4, stress: 5 },
+    { date: '2024-06-07', mood: 8, sleep: 9, water: 6, stress: 3 }
+];
 
-    const data = { date, mood, water, sleep, pain, stress, outside };
-    
-    let moodData = localStorage.getItem('moodData');
-    moodData = moodData ? JSON.parse(moodData) : [];
-    
-    moodData.push(data);
-    localStorage.setItem('moodData', JSON.stringify(moodData));
+// Function to calculate Pearson correlation coefficient
+function calculateCorrelation(xArray, yArray) {
+    const n = xArray.length;
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
 
-    // Show feedback message
-    document.getElementById('feedback').textContent = 'Entry added successfully!';
-    setTimeout(() => document.getElementById('feedback').textContent = '', 3000);
+    for (let i = 0; i < n; i++) {
+        sumX += xArray[i];
+        sumY += yArray[i];
+        sumXY += xArray[i] * yArray[i];
+        sumX2 += Math.pow(xArray[i], 2);
+        sumY2 += Math.pow(yArray[i], 2);
+    }
 
-    displayEntries();
-});
+    const numerator = (n * sumXY) - (sumX * sumY);
+    const denominator = Math.sqrt((n * sumX2 - Math.pow(sumX, 2)) * (n * sumY2 - Math.pow(sumY, 2)));
 
-function displayEntries() {
-    let moodData = localStorage.getItem('moodData');
-    moodData = moodData ? JSON.parse(moodData) : [];
+    if (denominator === 0) {
+        return 0; // Avoid division by zero
+    }
 
-    const entriesList = document.getElementById('entries-list');
-    entriesList.innerHTML = '';
-    moodData.forEach((entry, index) => {
-        const listItem = document.createElement('li');
-        listItem.textContent = `${entry.date}: Mood ${entry.mood}, Water ${entry.water} litres, Sleep ${entry.sleep} hours, Pain ${entry.pain}, Stress ${entry.stress}, Outside ${entry.outside} hours`;
-        const removeButton = document.createElement('button');
-        removeButton.textContent = 'Remove';
-        removeButton.onclick = () => {
-            if (confirm('Are you sure you want to remove this entry?')) {
-                moodData.splice(index, 1);
-                localStorage.setItem('moodData', JSON.stringify(moodData));
-                displayEntries();
-            }
-        };
-        listItem.appendChild(removeButton);
-        entriesList.appendChild(listItem);
+    return numerator / denominator;
+}
+
+// Function to generate insights based on mood data
+function generateInsights() {
+    const sleepValues = moodData.map(entry => entry.sleep);
+    const waterValues = moodData.map(entry => entry.water);
+    const stressValues = moodData.map(entry => entry.stress);
+
+    const moodValues = moodData.map(entry => entry.mood);
+
+    // Calculate correlations
+    const correlationSleep = calculateCorrelation(moodValues, sleepValues);
+    const correlationWater = calculateCorrelation(moodValues, waterValues);
+    const correlationStress = calculateCorrelation(moodValues, stressValues);
+
+    // Prepare insights based on correlations
+    const insights = [];
+
+    if (correlationSleep > 0.5) {
+        insights.push(`Higher mood scores correlate positively with better sleep.`);
+    } else if (correlationSleep < -0.5) {
+        insights.push(`Lower mood scores correlate negatively with poor sleep.`);
+    }
+
+    if (correlationWater > 0.5) {
+        insights.push(`Drinking more water seems to positively affect mood.`);
+    } else if (correlationWater < -0.5) {
+        insights.push(`Low water intake might contribute to lower mood scores.`);
+    }
+
+    if (correlationStress > 0.5) {
+        insights.push(`Reducing stress levels may lead to higher mood scores.`);
+    } else if (correlationStress < -0.5) {
+        insights.push(`High stress levels appear to correlate with lower mood.`);
+    }
+
+    return insights;
+}
+
+// Function to display insights on the webpage
+function displayInsights() {
+    const insightsContainer = document.getElementById('insightsContainer');
+    const insights = generateInsights();
+
+    insights.forEach(insight => {
+        const div = document.createElement('div');
+        div.classList.add('insight');
+        div.textContent = insight;
+        insightsContainer.appendChild(div);
     });
 }
 
-document.addEventListener('DOMContentLoaded', displayEntries);
+// Display mood chart and insights when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    // Display mood chart (replace with your chart code)
+    const ctx = document.getElementById('mood-chart').getContext('2d');
+    const moodValues = moodData.map(entry => entry.mood);
+    const labels = moodData.map(entry => entry.date);
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Mood',
+                data: moodValues,
+                borderColor: 'blue',
+                borderWidth: 1,
+                fill: false
+            }]
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Date'
+                    }
+                }],
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        stepSize: 1,
+                        max: 10
+                    },
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Mood Score'
+                    }
+                }]
+            }
+        }
+    });
+
+    // Display insights
+    displayInsights();
+});

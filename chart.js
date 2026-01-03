@@ -2,17 +2,33 @@
 let moodData = localStorage.getItem('moodData');
 moodData = moodData ? JSON.parse(moodData) : [];
 
+// Initialize with the latest week's data
+let currentWeekData = getLastWeekData();
+let moodChart = null; // Variable to hold the Chart.js instance
+
 function displayChart() {
-    const labels = moodData.map(entry => entry.date);
-    const moodValues = moodData.map(entry => entry.mood);
-    const waterValues = moodData.map(entry => entry.water);
-    const sleepValues = moodData.map(entry => entry.sleep);
-    const painValues = moodData.map(entry => entry.pain);
-    const stressValues = moodData.map(entry => entry.stress);
-    const outsideValues = moodData.map(entry => entry.outside);
+    const labels = currentWeekData.map(entry => entry.date);
+    const moodValues = currentWeekData.map(entry => entry.mood);
+    const waterValues = currentWeekData.map(entry => entry.water);
+    const sleepValues = currentWeekData.map(entry => entry.sleep);
+    const painValues = currentWeekData.map(entry => entry.pain);
+    const stressValues = currentWeekData.map(entry => entry.stress);
+    const outsideValues = currentWeekData.map(entry => entry.outside);
 
     const ctx = document.getElementById('mood-chart').getContext('2d');
-    new Chart(ctx, {
+
+    // Destroy existing chart if it exists
+    if (moodChart) {
+        moodChart.destroy();
+    }
+
+    // Adjust aspect ratio based on the window width
+    let aspectRatio = 2; // Initial aspect ratio (width:height)
+    if (window.innerWidth < 768) {
+        aspectRatio = 0.8; // Adjust for smaller screens
+    }
+
+    moodChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
@@ -54,22 +70,66 @@ function displayChart() {
                     backgroundColor: 'rgba(255, 206, 86, 0.2)',
                 },
             ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            aspectRatio: aspectRatio, // Set the aspect ratio dynamically
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        precision: 0 // Prevents squishing decimal values on the y-axis
+                    }
+                }]
+            }
         }
     });
 
     // Display insights
-    displayInsights();
+    generateInsights();
 }
 
-function displayInsights() {
-    const insightsContainer = document.getElementById('insightsList');
-    const insights = generateInsights();
+// Function to get data for the last week
+function getLastWeekData() {
+    // Assuming the data is sorted by date descending
+    const now = new Date();
+    const lastWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+    const lastWeekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
 
-    insights.forEach(insight => {
-        const li = document.createElement('li');
-        li.textContent = insight;
-        insightsContainer.appendChild(li);
+    return moodData.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= lastWeekStart && entryDate <= lastWeekEnd;
     });
+}
+
+// Function to get data for the next week
+function getNextWeekData() {
+    // Assuming the data is sorted by date descending
+    const now = new Date();
+    const nextWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const nextWeekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+
+    return moodData.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= nextWeekStart && entryDate <= nextWeekEnd;
+    });
+}
+
+// Event listeners for previous and next week buttons
+document.getElementById('prevWeek').addEventListener('click', () => {
+    currentWeekData = getLastWeekData();
+    updateChart();
+});
+
+document.getElementById('nextWeek').addEventListener('click', () => {
+    currentWeekData = getNextWeekData();
+    updateChart();
+});
+
+// Function to update chart with new data
+function updateChart() {
+    displayChart();
 }
 
 // Function to calculate Pearson correlation coefficient
@@ -97,12 +157,16 @@ function calculateCorrelation(xArray, yArray) {
 
 // Function to generate insights based on mood data
 function generateInsights() {
-    const sleepValues = moodData.map(entry => entry.sleep);
-    const waterValues = moodData.map(entry => entry.water);
-    const stressValues = moodData.map(entry => entry.stress);
-    const moodValues = moodData.map(entry => entry.mood);
-    const painValues = moodData.map(entry => entry.pain);
-    const outsideValues = moodData.map(entry => entry.outside);
+    const insightsContainer = document.getElementById('insightsList');
+    insightsContainer.innerHTML = '';
+
+    const insights = [];
+    const sleepValues = currentWeekData.map(entry => entry.sleep);
+    const waterValues = currentWeekData.map(entry => entry.water);
+    const stressValues = currentWeekData.map(entry => entry.stress);
+    const moodValues = currentWeekData.map(entry => entry.mood);
+    const painValues = currentWeekData.map(entry => entry.pain);
+    const outsideValues = currentWeekData.map(entry => entry.outside);
 
     // Calculate correlations
     const correlationSleep = calculateCorrelation(moodValues, sleepValues);
@@ -112,8 +176,6 @@ function generateInsights() {
     const correlationOutside = calculateCorrelation(moodValues, outsideValues);
 
     // Prepare insights based on correlations
-    const insights = [];
-
     if (correlationSleep > 0.5) {
         insights.push(`Higher mood scores correlate positively with better sleep.`);
     } else if (correlationSleep < -0.5) {
@@ -146,25 +208,20 @@ function generateInsights() {
 
     // Additional insights based on ideal sleep duration
     const idealSleepDuration = 8; // Ideal sleep duration in hours
-    const averageSleepDuration = sleepValues.reduce((acc, value) => acc + value, 0) / sleepValues.length;
-
-    if (averageSleepDuration >= idealSleepDuration) {
-        insights.push(`Your average sleep duration meets or exceeds the recommended 8 hours per day.`);
+    const averageSleepDuration = sleepValues.reduce((acc, val) => acc + val, 0) / sleepValues.length;
+    if (averageSleepDuration > idealSleepDuration) {
+        insights.push(`Getting more sleep than average might contribute to a better mood.`);
     } else if (averageSleepDuration < idealSleepDuration) {
-        insights.push(`Your average sleep duration is below the recommended 8 hours per day, which may affect mood.`);
+        insights.push(`Consider adjusting your sleep schedule to get closer to ${idealSleepDuration} hours per night.`);
     }
 
-    // Additional insights based on ideal water intake
-    const idealWaterIntake = 2; // Ideal water intake in liters
-    const averageWaterIntake = waterValues.reduce((acc, value) => acc + value, 0) / waterValues.length;
-
-    if (averageWaterIntake >= idealWaterIntake) {
-        insights.push(`Your average water intake meets or exceeds the recommended 2 liters per day.`);
-    } else {
-        insights.push(`Your average water intake is below the recommended 2 liters per day, which may affect mood.`);
-    }
-
-    return insights;
+    // Display insights in the UI
+    insights.forEach(insight => {
+        const listItem = document.createElement('li');
+        listItem.textContent = insight;
+        insightsContainer.appendChild(listItem);
+    });
 }
 
-document.addEventListener('DOMContentLoaded', displayChart);
+// Initial display of chart and insights
+displayChart();
